@@ -7,12 +7,14 @@ output:
     self_contained: no
 keep_md: true
 ---
-```{r message=FALSE, warning = FALSE}
+
+```r
 library(dplyr)
 library(gridExtra)
 library(ggplot2)
 ```
-```{r}
+
+```r
 #url = "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 #if(!file.exists("Assignment2")){
 #        dir.create("Assignment2")
@@ -21,8 +23,8 @@ library(ggplot2)
 #download.file(url, destfile="./Assignment2/stormdata.csv.bz2")
 ```
 ### **Cleaning data for analysis.**
-```{r}
 
+```r
 OriginalData <- read.csv("stormdata.csv.bz2")
 
 #copying data 
@@ -54,13 +56,13 @@ cleanData$evtype <- gsub(".*hail.*", "hail", cleanData$evtype)
 cleanData$evtype <- gsub(".*heat.*", "heat", cleanData$evtype)
 cleanData$evtype <- gsub(".*wind.*", "wind", cleanData$evtype)
 cleanData$evtype <- gsub("riverflood|coastal flood", "flood", cleanData$evtype)
-
 ```
 
 ### Data Analysis
 #### **Subetting data to visualize which weather phenomenal are most harmful with respect to population health. The data of interest here are fatalities and injuries.**
 
-```{r}
+
+```r
 #Grouping data frame by event type(evtype) and summing the total injuries & fatalities
 summData <- aggregate(cbind(fatalities, injuries) ~ evtype, data = cleanData, sum)
 #Set condition: Fatalities & injuries > 0
@@ -68,31 +70,58 @@ summData <- arrange(subset(subset(summData, fatalities>0), injuries>0), desc(fat
 ```
 
 ##### Subsetting data for plot. topInjuries and topFatalities include top 5 weather phenomenals that had caused the most casaulties and harm to our population.
-```{r}
+
+```r
 topInjuries <- arrange(summData[-2], desc(injuries))[1:5,]
 topFatalities <- arrange(summData[-3], desc(fatalities))[1:5,]
-
 ```
 
 
 ####**Based on my findings, Tornado is the most harmful in respect to population health. Tornado causes the highest fatalities and injuries.**
-```{r}
+
+```r
 # Visualization of topInjuries and topFatalities
 names(topInjuries)<- c("Event.Type","Injuries")
 names(topFatalities) <- c("Event.Type", "Fatalities")
 print(topInjuries)
-print(topFatalities)
+```
 
+```
+##   Event.Type Injuries
+## 1    tornado    91407
+## 2       wind    11402
+## 3       heat     9224
+## 4      flood     6808
+## 5  lightning     5230
+```
+
+```r
+print(topFatalities)
+```
+
+```
+##    Event.Type Fatalities
+## 1     tornado       5661
+## 2        heat       3138
+## 3        wind       1421
+## 4 flash flood        997
+## 5   lightning        816
+```
+
+```r
 p1 <- qplot(topInjuries$Event.Type, topInjuries$Injuries, geom ="histogram", stat="identity", fill = topInjuries$Event.Type) + xlab("Severe Event TYPE") + ylab("Number of injuries") + ggtitle("Top 5 injuries") + labs(fill="Severe Event Type")
 p2 <- qplot(topFatalities$Event.Type, topFatalities$Fatalities, stat="identity",geom="histogram", fill =topFatalities$Event.Type) + xlab("Severe Event Type") + ylab("Number of fatalities") + ggtitle("Top 5 fatalities") + labs(fill="Severe Event Type") 
 
 grid.arrange(p1,p2, nrow=2)
 ```
 
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
+
 #### **Subsetting data to visualize which weather phenomenal have the greatest economic consequences.**
 
 ##### cleaning data for analysis.
-```{r}
+
+```r
 # Copying clean data to econ
 econ <- cleanData
 #Grouping data frame by event type(evtype) and summing the total property damage & crop damage
@@ -104,15 +133,39 @@ names(econSum) <- c('Event.Type','Property.Damage','Crop.Damage')
 
 ##### Subsetting data for plot. topProp and topCrop include top 5 weather phenomenals that had caused the highest number of property and crop damages.
 
-```{r}
+
+```r
 #Subsetting to show 5 five weather phenomenals with highest damages.
 topProp <- arrange(select(econSum, Event.Type, Property.Damage), desc(Property.Damage))[1:5,]
 topProp$Property.Damage <- as.factor(topProp$Property.Damage)
 topCrop <- arrange(select(econSum, Event.Type, Crop.Damage), desc(Crop.Damage))[1:5,]
 topProp$Property.Damage <- as.factor(topCrop$Crop.Damage)
 print(topProp)
-print(topCrop)
+```
 
+```
+##    Event.Type Property.Damage
+## 1     tornado       585954.16
+## 2        wind       219451.54
+## 3 flash flood       184326.51
+## 4       flood       173612.58
+## 5        hail       100029.27
+```
+
+```r
+print(topCrop)
+```
+
+```
+##    Event.Type Crop.Damage
+## 1        hail    585954.2
+## 2        wind    219451.5
+## 3 flash flood    184326.5
+## 4       flood    173612.6
+## 5     tornado    100029.3
+```
+
+```r
 tp_plot <- qplot(topProp$Event.Type, topProp$Property.Damage, geom="histogram", stat="identity", fill = topProp$Event.Type) + ylab("Total Damage: Properties") + xlab("Event Type") + ggtitle("Top 5 Events") + labs(fill="Severe Event Type")
 
 tc_plot <- qplot(topCrop$Event.Type, topCrop$Crop.Damage/1000, geom="histogram", stat="identity", fill = topCrop$Event.Type) + ylab("Total Damage: Crops") + xlab("Event Type") + ggtitle("Top 5 Events") + labs(file = "Severe Event Type")
@@ -120,20 +173,43 @@ tc_plot <- qplot(topCrop$Event.Type, topCrop$Crop.Damage/1000, geom="histogram",
 grid.arrange(tp_plot, tc_plot, nrow =2)
 ```
 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png) 
+
 ##### topDamage includes total damages from property and crop damages from the top 5 weather phenomenals. 
-```{r}
+
+```r
 topDamage <- merge(topProp, topCrop, by.x='Event.Type', by.y='Event.Type')
 topDamage <- arrange(as.data.frame(cbind(topDamage$Event.Type, topDamage$Property.Damage+topDamage$Crop.Damage)), desc(V2))
+```
+
+```
+## Warning in Ops.factor(topDamage$Property.Damage, topDamage$Crop.Damage):
+## '+' not meaningful for factors
+```
+
+```r
 names(topDamage) <- c("Event.Type", "Total.Damage")
 print(topDamage)
 ```
 
+```
+##    Event.Type Total.Damage
+## 1 flash flood         <NA>
+## 2       flood         <NA>
+## 3        hail         <NA>
+## 4     tornado         <NA>
+## 5        wind         <NA>
+```
+
 ####**Based on my findings, Hail damage causes the greatest economic consequences.**
-```{r}
+
+```r
 td_plot <- qplot(topDamage$Event.Type, topDamage$Total.Damage, geom="histogram", stat="identity", fill = topDamage$Event.Type) + ylab("Total Damage: Prop & Crop") + xlab('Event Type') + ggtitle("Top 5 Event") + labs(fill = "Severe Event Type")
 
 td_plot
 ```
+
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png) 
 
 
 
