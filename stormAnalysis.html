@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="author" content="Vincent Phan" />
+
+<meta name="date" content="2015-09-25" />
+
+<title>Report: Severe Weather Events</title>
+
+<script src="stormAnalysis_files/jquery-1.11.0/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="stormAnalysis_files/bootstrap-3.3.1/css/bootstrap.min.css" rel="stylesheet" />
+<script src="stormAnalysis_files/bootstrap-3.3.1/js/bootstrap.min.js"></script>
+<script src="stormAnalysis_files/bootstrap-3.3.1/shim/html5shiv.min.js"></script>
+<script src="stormAnalysis_files/bootstrap-3.3.1/shim/respond.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<link rel="stylesheet"
+      href="stormAnalysis_files/highlight/default.css"
+      type="text/css" />
+<script src="stormAnalysis_files/highlight/highlight.js"></script>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img { 
+  max-width:100%; 
+  height: auto; 
+}
+</style>
+<div class="container-fluid main-container">
+
+
+<div id="header">
+<h1 class="title">Report: Severe Weather Events</h1>
+<h4 class="author"><em>Vincent Phan</em></h4>
+<h4 class="date"><em>September 25, 2015</em></h4>
+</div>
+
+
+<pre class="r"><code>library(dplyr)
+library(gridExtra)
+library(ggplot2)</code></pre>
+<pre class="r"><code>#url = &quot;https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2&quot;
+#if(!file.exists(&quot;Assignment2&quot;)){
+#        dir.create(&quot;Assignment2&quot;)
+#}
+
+#download.file(url, destfile=&quot;./Assignment2/stormdata.csv.bz2&quot;)</code></pre>
+<div id="cleaning-data-for-analysis" class="section level4">
+<h4>Cleaning data for analysis</h4>
+<pre class="r"><code>OriginalData &lt;- read.csv(&quot;stormdata.csv.bz2&quot;)
+
+#copying data 
+intData &lt;- arrange(OriginalData, EVTYPE)
+
+#changing variable names and interested EVTYPE to to lower case.
+names(intData) &lt;- tolower(names(intData))
+intData$evtype &lt;- tolower(as.character(intData$evtype))
+
+#copying data
+rename &lt;- select(intData, evtype, fatalities, injuries)
+
+rename$evtype &lt;- gsub(&quot;flash flooding&quot;, &quot;flash flood&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;flood/flash flood|flooding&quot;, &quot;flood&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;freezing drizzle&quot;, &quot;freezing rain&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;gusty winds&quot;, &quot;gusty wind&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;heavy surf|heavy surf/high surf|high seas&quot;, &quot;high surf&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;high wind|high wind and seas|high winds|high winds/snow|strong winds&quot;, &quot;strong wind&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;hurricane erin|hurricane opal|hurricane/typhoon&quot;, &quot;hurricane&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;tropical storm gordon&quot;, &quot;tropical storm&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;wild/forest fire&quot;, &quot;wild fires&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;winds&quot;, &quot;wind&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;winter storm high winds|winter storms&quot;, &quot;winter storm&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;winter weather/mix&quot;, &quot;winter weather&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;landslides&quot;, &quot;landslide &quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;.*tornado.*&quot;, &quot;tornado&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;.*hail.*&quot;, &quot;hail&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;.*heat.*&quot;, &quot;heat&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;.*wind.*&quot;, &quot;wind&quot;, rename$evtype)
+rename$evtype &lt;- gsub(&quot;riverflood|coastal flood&quot;, &quot;flood&quot;, rename$evtype)</code></pre>
+</div>
+<div id="summing-all-number-of-effect-people-by-evtype" class="section level3">
+<h3>Summing all number of effect people by evtype</h3>
+<pre class="r"><code>#sum &amp; ordering after renaming the characters
+summData &lt;- aggregate(cbind(fatalities, injuries) ~ evtype, data = rename, sum)
+cleanData &lt;- arrange(subset(subset(summData, fatalities&gt;0), injuries&gt;0), desc(fatalities), desc(injuries))</code></pre>
+</div>
+<div id="subsetting-data-for-plot" class="section level3">
+<h3>Subsetting data for plot</h3>
+<pre class="r"><code>topInjuries &lt;- arrange(cleanData[-2], desc(injuries))[1:5,]
+topFatalities &lt;- arrange(cleanData[-3], desc(fatalities))[1:5,]
+
+p1 &lt;- qplot(topInjuries$evtype, topInjuries$injuries, geom =&quot;histogram&quot;, stat=&quot;identity&quot;, fill = topInjuries$evtype) + xlab(&quot;Severe weather events: EVTYPE&quot;) + ylab(&quot;Number of injuries&quot;) + ggtitle(&quot;Top 5 injuries&quot;) 
+p2 &lt;- qplot(topFatalities$evtype, topFatalities$fatalities, stat=&quot;identity&quot;,geom=&quot;histogram&quot;, fill =topFatalities$evtype) + xlab(&quot;Severe weather events: EVTYPE&quot;) + ylab(&quot;Number of fatalities&quot;) + ggtitle(&quot;Top 5 fatalities&quot;)
+
+grid.arrange(p1,p2, nrow=2)</code></pre>
+<p><img src="stormAnalysis_files/figure-html/unnamed-chunk-5-1.png" title="" alt="" width="672" /></p>
+</div>
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

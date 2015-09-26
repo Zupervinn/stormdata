@@ -1,0 +1,97 @@
+---
+title: "Report: Severe Weather Events"
+author: "Vincent Phan"
+date: "September 25, 2015"
+output: 
+  html_document: 
+    self_contained: no
+keep_md: true
+---
+```{r message=FALSE, warning = FALSE}
+library(dplyr)
+library(gridExtra)
+library(ggplot2)
+```
+```{r}
+#url = "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+#if(!file.exists("Assignment2")){
+#        dir.create("Assignment2")
+#}
+
+#download.file(url, destfile="./Assignment2/stormdata.csv.bz2")
+```
+#### Cleaning data for analysis
+```{r}
+
+OriginalData <- read.csv("stormdata.csv.bz2")
+
+#copying data 
+intData <- arrange(OriginalData, EVTYPE)
+
+#changing variable names and interested EVTYPE to to lower case.
+names(intData) <- tolower(names(intData))
+intData$evtype <- tolower(as.character(intData$evtype))
+
+#copying data
+cleanData <- intData
+
+cleanData$evtype <- gsub("flash flooding", "flash flood", cleanData$evtype)
+cleanData$evtype <- gsub("flood/flash flood|flooding", "flood", cleanData$evtype)
+cleanData$evtype <- gsub("freezing drizzle", "freezing rain", cleanData$evtype)
+cleanData$evtype <- gsub("gusty winds", "gusty wind", cleanData$evtype)
+cleanData$evtype <- gsub("heavy surf|heavy surf/high surf|high seas", "high surf", cleanData$evtype)
+cleanData$evtype <- gsub("high wind|high wind and seas|high winds|high winds/snow|strong winds", "strong wind", cleanData$evtype)
+cleanData$evtype <- gsub("hurricane erin|hurricane opal|hurricane/typhoon", "hurricane", cleanData$evtype)
+cleanData$evtype <- gsub("tropical storm gordon", "tropical storm", cleanData$evtype)
+cleanData$evtype <- gsub("wild/forest fire", "wild fires", cleanData$evtype)
+cleanData$evtype <- gsub("winds", "wind", cleanData$evtype)
+cleanData$evtype <- gsub("winter storm high winds|winter storms", "winter storm", cleanData$evtype)
+cleanData$evtype <- gsub("winter weather/mix", "winter weather", cleanData$evtype)
+cleanData$evtype <- gsub("landslides", "landslide ", cleanData$evtype)
+cleanData$evtype <- gsub(".*tornado.*", "tornado", cleanData$evtype)
+cleanData$evtype <- gsub(".*hail.*", "hail", cleanData$evtype)
+cleanData$evtype <- gsub(".*heat.*", "heat", cleanData$evtype)
+cleanData$evtype <- gsub(".*wind.*", "wind", cleanData$evtype)
+cleanData$evtype <- gsub("riverflood|coastal flood", "flood", cleanData$evtype)
+
+```
+
+## Data Analysis
+### Subetting data to visualize which weather phonominal are most harmful with respect to population health. The data of interest here are fatalities and injuries.
+
+```{r}
+#Grouping data fram by event type: evtype.
+summData <- aggregate(cbind(fatalities, injuries) ~ evtype, data = cleanData, sum)
+summData <- arrange(subset(subset(summData, fatalities>0), injuries>0), desc(fatalities), desc(injuries))
+```
+
+#### Subsetting data for plot. topInjuries and topFatalities include top 5 weather phonominals that caused the most casaulties and harm to our population.
+```{r}
+topInjuries <- arrange(summData[-2], desc(injuries))[1:5,]
+topFatalities <- arrange(summData[-3], desc(fatalities))[1:5,]
+
+```
+
+
+###Based on my findings, Tornado is the most harmful in respect to population health. Tornado causes the highest fatalities and injuries.
+```{r}
+# Visualization of topInjuries and topFatalities
+names(topInjuries)<- c("Event.Type","Injuries")
+names(topFatalities) <- c("Event.Type", "Fatalities")
+print(topInjuries)
+print(topFatalities)
+
+p1 <- qplot(topInjuries$Event.Type, topInjuries$Injuries, geom ="histogram", stat="identity", fill = topInjuries$Event.Type) + xlab("Severe Event TYPE") + ylab("Number of injuries") + ggtitle("Top 5 injuries") + labs(fill="Severe Event Type")
+p2 <- qplot(topFatalities$Event.Type, topFatalities$Fatalities, stat="identity",geom="histogram", fill =topFatalities$Event.Type) + xlab("Severe Event Type") + ylab("Number of fatalities") + ggtitle("Top 5 fatalities") + labs(fill="Severe Event Type") 
+
+grid.arrange(p1,p2, nrow=2)
+```
+
+### Susetting data to visualize which weahter phonominal have the greatest economic consequences.
+
+```{r}
+#copying clean data to econ
+econ <- cleanData
+#
+econ <- select(econ, evtype, propdmg, cropdmg)
+
