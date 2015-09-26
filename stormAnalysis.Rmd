@@ -123,8 +123,11 @@ grid.arrange(tp_plot, tc_plot, nrow =2)
 ##### topDamage includes total damages from property and crop damages from the top 5 weather phenomenals. 
 ```{r}
 topDamage <- merge(topProp, topCrop, by.x='Event.Type', by.y='Event.Type')
+topDamage$Property.Damage <- as.numeric(topDamage$Property.Damage)
+topDamage$Crop.Damage <- as.numeric(topDamage$Crop.Damage)
 topDamage <- arrange(as.data.frame(cbind(topDamage$Event.Type, topDamage$Property.Damage+topDamage$Crop.Damage)), desc(V2))
 names(topDamage) <- c("Event.Type", "Total.Damage")
+topDamage$Total.Damage <- as.factor(topDamage$Total.Damage)
 print(topDamage)
 ```
 
@@ -137,6 +140,7 @@ td_plot
 
 
 
-
+library(knitr)
+knit2html("stormAnalysis.Rmd")
 
 

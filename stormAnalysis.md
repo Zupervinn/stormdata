@@ -179,26 +179,21 @@ grid.arrange(tp_plot, tc_plot, nrow =2)
 
 ```r
 topDamage <- merge(topProp, topCrop, by.x='Event.Type', by.y='Event.Type')
+topDamage$Property.Damage <- as.numeric(topDamage$Property.Damage)
+topDamage$Crop.Damage <- as.numeric(topDamage$Crop.Damage)
 topDamage <- arrange(as.data.frame(cbind(topDamage$Event.Type, topDamage$Property.Damage+topDamage$Crop.Damage)), desc(V2))
-```
-
-```
-## Warning in Ops.factor(topDamage$Property.Damage, topDamage$Crop.Damage):
-## '+' not meaningful for factors
-```
-
-```r
 names(topDamage) <- c("Event.Type", "Total.Damage")
+topDamage$Total.Damage <- as.factor(topDamage$Total.Damage)
 print(topDamage)
 ```
 
 ```
 ##    Event.Type Total.Damage
-## 1 flash flood         <NA>
-## 2       flood         <NA>
-## 3        hail         <NA>
-## 4     tornado         <NA>
-## 5        wind         <NA>
+## 1        hail    585955.16
+## 2        wind    219455.54
+## 3 flash flood    184329.51
+## 4       flood    173614.58
+## 5     tornado    100034.27
 ```
 
 ####**Based on my findings, Hail damage causes the greatest economic consequences.**
@@ -213,6 +208,7 @@ td_plot
 
 
 
-
+library(knitr)
+knit2html("stormAnalysis.Rmd")
 
 
