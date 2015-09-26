@@ -196,7 +196,7 @@ print(topDamage)
 ## 5     tornado    100034.27
 ```
 
-####**Based on my findings, Hail damage causes the greatest economic consequences.**
+####**Based on my findings, Hail damage have the greatest economic consequences.**
 
 ```r
 td_plot <- qplot(topDamage$Event.Type, topDamage$Total.Damage, geom="histogram", stat="identity", fill = topDamage$Event.Type) + ylab("Total Damage: Prop & Crop") + xlab('Event Type') + ggtitle("Top 5 Event") + labs(fill = "Severe Event Type")
